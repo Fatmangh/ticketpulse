@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
-import { DollarSign, Ticket, Users, ScanLine, Package, TrendingUp } from 'lucide-react';
+import { DollarSign, Ticket, ScanLine, Package, TrendingUp } from 'lucide-react';
 import api from '../../lib/api';
 import { useSocket } from '../../context/SocketContext';
 import { StatCard } from '../../components/ui/StatCard';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
-import { Modal } from '../../components/ui/Modal';
-import { Input } from '../../components/ui/Input';
+import { InventoryModal } from './InventoryModal';
 import type { OverviewStats, Sale } from '../../types';
 
 export function AdminOverview() {
@@ -15,7 +14,6 @@ export function AdminOverview() {
   const [feed, setFeed] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(true);
   const [inventoryModal, setInventoryModal] = useState(false);
-  const [inventoryValue, setInventoryValue] = useState('');
 
   const fetchData = async () => {
     try {
@@ -47,16 +45,9 @@ export function AdminOverview() {
     };
   }, [socket]);
 
-  const handleSetInventory = async () => {
-    const num = parseInt(inventoryValue);
-    if (isNaN(num) || num < 0) return;
-    try {
-      await api.put('/inventory/today', { totalTickets: num });
-      setInventoryModal(false);
-      fetchData();
-    } catch (err) {
-      console.error('Failed to set inventory:', err);
-    }
+  const handleSetInventory = async (total: number) => {
+    await api.put('/inventory/today', { totalTickets: total });
+    await fetchData();
   };
 
   if (loading) return <div className="flex justify-center py-12 text-text-secondary">Loading...</div>;
@@ -65,10 +56,7 @@ export function AdminOverview() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Dashboard</h1>
-        <Button variant="secondary" size="sm" onClick={() => {
-          setInventoryValue(String(stats?.inventory.total ?? 500));
-          setInventoryModal(true);
-        }}>
+        <Button variant="secondary" size="sm" onClick={() => setInventoryModal(true)}>
           <Package size={16} />
           Inventory
         </Button>
@@ -133,22 +121,12 @@ export function AdminOverview() {
         </div>
       </div>
 
-      {/* Inventory Modal */}
-      <Modal open={inventoryModal} onClose={() => setInventoryModal(false)} title="Set Today's Inventory">
-        <div className="space-y-4">
-          <Input
-            label="Total Tickets"
-            type="number"
-            value={inventoryValue}
-            onChange={(e) => setInventoryValue(e.target.value)}
-            min={0}
-          />
-          <div className="flex gap-2 justify-end">
-            <Button variant="secondary" onClick={() => setInventoryModal(false)}>Cancel</Button>
-            <Button onClick={handleSetInventory}>Save</Button>
-          </div>
-        </div>
-      </Modal>
+      <InventoryModal
+        open={inventoryModal}
+        onClose={() => setInventoryModal(false)}
+        currentTotal={stats?.inventory.total ?? 500}
+        onSave={handleSetInventory}
+      />
     </div>
   );
 }

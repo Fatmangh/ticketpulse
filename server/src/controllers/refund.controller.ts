@@ -7,7 +7,7 @@ import { getIO } from '../config/socket.js';
 import type { AuthRequest } from '../types/index.js';
 
 export async function searchRefundable(req: AuthRequest, res: Response) {
-  const { q } = req.query;
+  const q = req.query.q;
   if (!q || typeof q !== 'string') {
     throw new AppError(400, 'Search query required');
   }
@@ -37,7 +37,7 @@ export async function searchRefundable(req: AuthRequest, res: Response) {
 }
 
 export async function processRefund(req: AuthRequest, res: Response) {
-  const { saleId } = req.params;
+  const saleId = req.params.saleId as string;
   const user = req.user!;
 
   const sale = await prisma.sale.findUnique({
@@ -58,6 +58,8 @@ export async function processRefund(req: AuthRequest, res: Response) {
   if (sale.paymentMethod === 'CLOVER' && sale.cloverPaymentId) {
     await processCloverRefund(sale.cloverPaymentId, sale.totalAmount);
   }
+
+  const ticketCount = sale.tickets.length;
 
   const updatedSale = await prisma.$transaction(async (tx) => {
     const updated = await tx.sale.update({
@@ -82,7 +84,7 @@ export async function processRefund(req: AuthRequest, res: Response) {
         action: 'REFUND_PROCESSED',
         entityType: 'Sale',
         entityId: saleId,
-        details: { totalAmount: sale.totalAmount, ticketCount: sale.tickets.length },
+        details: { totalAmount: sale.totalAmount, ticketCount },
       },
     });
 

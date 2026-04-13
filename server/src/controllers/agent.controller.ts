@@ -113,13 +113,14 @@ const updateAgentSchema = z.object({
 });
 
 export async function updateAgent(req: Request, res: Response) {
+  const id = req.params.id as string;
   const data = updateAgentSchema.parse(req.body);
 
-  const agent = await prisma.user.findUnique({ where: { id: req.params.id } });
+  const agent = await prisma.user.findUnique({ where: { id } });
   if (!agent) throw new AppError(404, 'Agent not found');
 
   const updated = await prisma.user.update({
-    where: { id: req.params.id },
+    where: { id },
     data,
     select: { id: true, agentId: true, name: true, email: true, phone: true, ticketAlloc: true, active: true },
   });
@@ -128,11 +129,13 @@ export async function updateAgent(req: Request, res: Response) {
 }
 
 export async function toggleAgentStatus(req: Request, res: Response) {
-  const agent = await prisma.user.findUnique({ where: { id: req.params.id } });
+  const id = req.params.id as string;
+
+  const agent = await prisma.user.findUnique({ where: { id } });
   if (!agent) throw new AppError(404, 'Agent not found');
 
   const updated = await prisma.user.update({
-    where: { id: req.params.id },
+    where: { id },
     data: { active: !agent.active },
     select: { id: true, agentId: true, name: true, active: true },
   });
@@ -141,14 +144,16 @@ export async function toggleAgentStatus(req: Request, res: Response) {
 }
 
 export async function resetPin(req: AuthRequest, res: Response) {
-  const agent = await prisma.user.findUnique({ where: { id: req.params.id } });
+  const id = req.params.id as string;
+
+  const agent = await prisma.user.findUnique({ where: { id } });
   if (!agent) throw new AppError(404, 'Agent not found');
 
   const pin = String(Math.floor(1000 + Math.random() * 9000));
   const pinHash = await hashPin(pin);
 
   await prisma.user.update({
-    where: { id: req.params.id },
+    where: { id },
     data: { pinHash },
   });
 

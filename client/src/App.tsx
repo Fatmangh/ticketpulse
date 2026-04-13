@@ -12,6 +12,7 @@ import { RefundLookup } from './pages/agent/RefundLookup';
 import { AdminOverview } from './pages/admin/Overview';
 import { ManageAgents } from './pages/admin/ManageAgents';
 import { Transactions } from './pages/admin/Transactions';
+import { AgentPerformance } from './pages/admin/AgentPerformance';
 import { ScannerPage } from './pages/scanner/Scanner';
 
 function RootRedirect() {
@@ -42,6 +43,7 @@ export default function App() {
               <Route path="/admin" element={<AdminLayout />}>
                 <Route index element={<AdminOverview />} />
                 <Route path="agents" element={<ManageAgents />} />
+                <Route path="performance" element={<AgentPerformance />} />
                 <Route path="transactions" element={<Transactions />} />
                 <Route path="scanner" element={<ScannerPage />} />
               </Route>

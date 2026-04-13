@@ -4,7 +4,6 @@ import { prisma } from '../config/db.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { COMMISSION_RATE } from '../utils/constants.js';
 import { checkInventory } from '../services/inventory.service.js';
-import { generateQRCode } from '../services/qr.service.js';
 import { sendTicketEmail } from '../services/email.service.js';
 import { processCloverPayment } from '../services/clover.service.js';
 import { getIO } from '../config/socket.js';
@@ -36,11 +35,11 @@ export async function createSale(req: AuthRequest, res: Response) {
     throw new AppError(404, 'Ticket type not found or inactive');
   }
 
-  // Check inventory
+  // Check inventory (global + per-agent)
   await checkInventory(user.userId, data.quantity);
 
   const totalAmount = ticketType.price * data.quantity;
-  const commissionAmount = totalAmount * COMMISSION_RATE;
+  const commissionAmount = Math.round(totalAmount * COMMISSION_RATE * 100) / 100;
 
   // Process payment
   let cloverPaymentId: string | null = null;
@@ -50,7 +49,7 @@ export async function createSale(req: AuthRequest, res: Response) {
 
   // Create sale + tickets in a transaction
   const sale = await prisma.$transaction(async (tx) => {
-    const sale = await tx.sale.create({
+    const newSale = await tx.sale.create({
       data: {
         agentId: user.userId,
         ticketTypeId: data.ticketTypeId,
@@ -69,10 +68,10 @@ export async function createSale(req: AuthRequest, res: Response) {
     // Create individual tickets with unique QR codes
     const tickets = [];
     for (let i = 1; i <= data.quantity; i++) {
-      const qrCode = `TP-${sale.id}-${i}-${crypto.randomBytes(4).toString('hex')}`;
+      const qrCode = `TP-${newSale.id}-${i}-${crypto.randomBytes(4).toString('hex')}`;
       const ticket = await tx.ticket.create({
         data: {
-          saleId: sale.id,
+          saleId: newSale.id,
           qrCode,
           ticketNumber: i,
         },
@@ -86,12 +85,12 @@ export async function createSale(req: AuthRequest, res: Response) {
         userId: user.userId,
         action: 'SALE_CREATED',
         entityType: 'Sale',
-        entityId: sale.id,
+        entityId: newSale.id,
         details: { quantity: data.quantity, totalAmount, paymentMethod: data.paymentMethod },
       },
     });
 
-    return { ...sale, tickets };
+    return { ...newSale, tickets };
   });
 
   // Generate QR codes and send email (async, don't block response)
@@ -124,7 +123,7 @@ export async function listSales(req: AuthRequest, res: Response) {
 
   if (user.role === 'AGENT') {
     where.agentId = user.userId;
-  } else if (filterAgentId) {
+  } else if (typeof filterAgentId === 'string') {
     where.agentId = filterAgentId;
   }
 
@@ -132,12 +131,13 @@ export async function listSales(req: AuthRequest, res: Response) {
     where.status = status;
   }
 
-  if (date) {
-    const d = new Date(date as string);
-    where.createdAt = {
-      gte: new Date(d.setHours(0, 0, 0, 0)),
-      lt: new Date(d.setHours(24, 0, 0, 0)),
-    };
+  if (typeof date === 'string') {
+    const d = new Date(date);
+    const start = new Date(d);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(d);
+    end.setHours(23, 59, 59, 999);
+    where.createdAt = { gte: start, lte: end };
   }
 
   const sales = await prisma.sale.findMany({
@@ -151,8 +151,10 @@ export async function listSales(req: AuthRequest, res: Response) {
 }
 
 export async function getSale(req: AuthRequest, res: Response) {
+  const id = req.params.id as string;
+
   const sale = await prisma.sale.findUnique({
-    where: { id: req.params.id },
+    where: { id },
     include: {
       ticketType: true,
       agent: { select: { agentId: true, name: true } },
