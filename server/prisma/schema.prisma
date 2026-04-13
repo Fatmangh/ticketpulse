@@ -1,0 +1,132 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  AGENT
+}
+
+enum PaymentMethod {
+  CLOVER
+  CASH
+}
+
+enum SaleStatus {
+  COMPLETED
+  REFUNDED
+}
+
+enum TicketStatus {
+  ACTIVE
+  SCANNED
+  VOIDED
+}
+
+model User {
+  id            String   @id @default(cuid())
+  agentId       String   @unique
+  name          String
+  pinHash       String
+  role          Role     @default(AGENT)
+  email         String?
+  phone         String?
+  active        Boolean  @default(true)
+  ticketAlloc   Int      @default(50)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  sales            Sale[]
+  refundsProcessed Sale[] @relation("RefundedBy")
+
+  @@map("users")
+}
+
+model TicketType {
+  id        String   @id @default(cuid())
+  name      String
+  icon      String   @default("🎫")
+  price     Float
+  active    Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  sales Sale[]
+
+  @@map("ticket_types")
+}
+
+model Sale {
+  id               String        @id @default(cuid())
+  orderNumber      String        @unique @default(cuid())
+  agentId          String
+  agent            User          @relation(fields: [agentId], references: [id])
+  ticketTypeId     String
+  ticketType       TicketType    @relation(fields: [ticketTypeId], references: [id])
+  quantity         Int
+  unitPrice        Float
+  totalAmount      Float
+  commissionRate   Float         @default(0.08)
+  commissionAmount Float
+  customerName     String        @default("Walk-in")
+  customerEmail    String
+  paymentMethod    PaymentMethod
+  cloverPaymentId  String?
+  status           SaleStatus    @default(COMPLETED)
+  emailSent        Boolean       @default(false)
+  refundedAt       DateTime?
+  refundedById     String?
+  refundedBy       User?         @relation("RefundedBy", fields: [refundedById], references: [id])
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  tickets Ticket[]
+
+  @@index([agentId, createdAt])
+  @@index([status, createdAt])
+  @@index([customerEmail])
+  @@map("sales")
+}
+
+model Ticket {
+  id           String       @id @default(cuid())
+  saleId       String
+  sale         Sale         @relation(fields: [saleId], references: [id])
+  qrCode       String       @unique
+  ticketNumber Int
+  status       TicketStatus @default(ACTIVE)
+  scannedAt    DateTime?
+  createdAt    DateTime     @default(now())
+
+  @@index([qrCode])
+  @@index([saleId])
+  @@map("tickets")
+}
+
+model Inventory {
+  id           String   @id @default(cuid())
+  date         DateTime @unique @db.Date
+  totalTickets Int      @default(500)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("inventory")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  action     String
+  entityType String
+  entityId   String
+  details    Json?
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}
