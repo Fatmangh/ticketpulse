@@ -4,12 +4,13 @@ import { Minus, Plus, CreditCard, Banknote } from 'lucide-react';
 import api from '../../lib/api';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import type { TicketType, PaymentMethod } from '../../types';
+import { useTicketTypes } from '../../hooks/useTicketTypes';
+import type { PaymentMethod } from '../../types';
 
 export function NewSale() {
   const navigate = useNavigate();
-  const [ticketTypes, setTicketTypes] = useState<TicketType[]>([]);
-  const [selectedType, setSelectedType] = useState<TicketType | null>(null);
+  const { activeTicketTypes: ticketTypes } = useTicketTypes();
+  const [selectedType, setSelectedType] = useState<typeof ticketTypes[0] | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [customerName, setCustomerName] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
@@ -18,12 +19,16 @@ export function NewSale() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Auto-select first type when types load or change
   useEffect(() => {
-    api.get('/tickets/types').then((res) => {
-      setTicketTypes(res.data);
-      if (res.data.length > 0) setSelectedType(res.data[0]);
-    }).catch(() => {});
-  }, []);
+    if (ticketTypes.length > 0 && !selectedType) {
+      setSelectedType(ticketTypes[0]);
+    }
+    // If selected type is no longer active, deselect
+    if (selectedType && !ticketTypes.find((t) => t.id === selectedType.id)) {
+      setSelectedType(ticketTypes[0] ?? null);
+    }
+  }, [ticketTypes, selectedType]);
 
   const total = selectedType ? selectedType.price * quantity : 0;
   const emailsMatch = customerEmail === customerEmailConfirm && customerEmail.length > 0;
@@ -79,7 +84,7 @@ export function NewSale() {
             ))}
           </div>
           {ticketTypes.length === 0 && (
-            <p className="text-sm text-text-secondary">Loading ticket types... (Make a sale first via seed data)</p>
+            <p className="text-sm text-text-secondary">No ticket types available. Contact admin.</p>
           )}
         </div>
 

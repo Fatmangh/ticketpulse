@@ -48,16 +48,16 @@ async function main() {
   // Create ticket types
   const ticketTypes = await Promise.all([
     prisma.ticketType.create({
-      data: { name: 'General Admission', icon: '🎫', price: 35, sortOrder: 1 },
+      data: { name: 'General Admission', icon: '🎫', price: 35, description: 'Standard entry ticket', sortOrder: 0 },
     }),
     prisma.ticketType.create({
-      data: { name: 'VIP', icon: '⭐', price: 75, sortOrder: 2 },
+      data: { name: 'VIP Experience', icon: '⭐', price: 75, description: 'Priority access + perks', sortOrder: 1 },
     }),
     prisma.ticketType.create({
-      data: { name: 'Group (4-pack)', icon: '👥', price: 120, sortOrder: 3 },
+      data: { name: 'Group Pack (4)', icon: '👥', price: 120, description: '4 entries, 1 price', sortOrder: 2 },
     }),
     prisma.ticketType.create({
-      data: { name: 'Premium', icon: '💎', price: 95, sortOrder: 4 },
+      data: { name: 'Premium Plus', icon: '💎', price: 95, description: 'All-inclusive package', sortOrder: 3 },
     }),
   ]);
   console.log('Created ticket types:', ticketTypes.map((t) => t.name).join(', '));

@@ -1,10 +1,11 @@
 import { NavLink, Outlet, Navigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Receipt, ScanLine, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, Users, Receipt, ScanLine, BarChart3, Ticket } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { Header } from './Header';
 
 const navItems = [
   { to: '/admin', icon: LayoutDashboard, label: 'Overview', end: true },
+  { to: '/admin/ticket-types', icon: Ticket, label: 'Tickets' },
   { to: '/admin/agents', icon: Users, label: 'Agents' },
   { to: '/admin/performance', icon: BarChart3, label: 'Performance' },
   { to: '/admin/transactions', icon: Receipt, label: 'Transactions' },

@@ -15,10 +15,13 @@ export interface User {
 export interface TicketType {
   id: string;
   name: string;
+  description: string | null;
   icon: string;
   price: number;
   active: boolean;
   sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Sale {

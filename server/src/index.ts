@@ -13,6 +13,7 @@ import { agentRoutes } from './routes/agent.routes.js';
 import { inventoryRoutes } from './routes/inventory.routes.js';
 import { adminRoutes } from './routes/admin.routes.js';
 import { ticketRoutes } from './routes/ticket.routes.js';
+import { ticketTypeRoutes } from './routes/ticketType.routes.js';
 
 const app = express();
 const httpServer = createServer(app);
@@ -36,6 +37,7 @@ app.use('/api/agents', agentRoutes);
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/tickets', ticketRoutes);
+app.use('/api/ticket-types', ticketTypeRoutes);
 
 app.use(errorHandler);
 
