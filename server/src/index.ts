@@ -1,3 +1,4 @@
+import 'express-async-errors';
 import express from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
@@ -11,6 +12,7 @@ import { scanRoutes } from './routes/scan.routes.js';
 import { agentRoutes } from './routes/agent.routes.js';
 import { inventoryRoutes } from './routes/inventory.routes.js';
 import { adminRoutes } from './routes/admin.routes.js';
+import { ticketRoutes } from './routes/ticket.routes.js';
 
 const app = express();
 const httpServer = createServer(app);
@@ -33,6 +35,7 @@ app.use('/api/scan', scanRoutes);
 app.use('/api/agents', agentRoutes);
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/tickets', ticketRoutes);
 
 app.use(errorHandler);
 

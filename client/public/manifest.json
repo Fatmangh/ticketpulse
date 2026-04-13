@@ -1,0 +1,16 @@
+{
+  "name": "TicketPulse",
+  "short_name": "TicketPulse",
+  "description": "Agent-based ticketing platform",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#101114",
+  "theme_color": "#E8643A",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
